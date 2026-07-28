@@ -1,9 +1,12 @@
 import os
+import json
 import streamlit as st
 from PIL import Image
 import numpy as np
-import json
 from model_pipeline import ImageRecognitionPipeline
+
+# Base directory for relative file paths on both local and cloud
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
 # Set Page Config
 st.set_page_config(
@@ -13,39 +16,28 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS for Premium Design
+# Custom CSS for styling
 st.markdown("""
 <style>
     .main-title {
         font-size: 2.2rem;
         font-weight: 800;
-        background: linear-gradient(90deg, #3B82F6, #8B5CF6);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        margin-bottom: 0.5rem;
+        color: #1E3A8A;
+        margin-bottom: 0.2rem;
     }
     .sub-title {
-        font-size: 1.1rem;
-        color: #9CA3AF;
+        font-size: 1.05rem;
+        color: #4B5563;
         margin-bottom: 1.5rem;
     }
-    .metric-card {
-        background-color: #1F2937;
-        padding: 1.2rem;
-        border-radius: 12px;
-        border: 1px solid #374151;
-        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-        margin-bottom: 1rem;
-    }
     .caption-box {
-        background-color: #111827;
-        border-left: 4px solid #3B82F6;
+        background-color: #F3F4F6;
+        border-left: 4px solid #2563EB;
         padding: 1rem;
         border-radius: 6px;
-        font-size: 1.15rem;
-        font-family: 'Inter', sans-serif;
-        color: #F3F4F6;
-        margin: 0.5rem 0;
+        font-size: 1.1rem;
+        color: #1F2937;
+        margin: 0.6rem 0;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -70,7 +62,7 @@ st.sidebar.subheader("Select Input Image")
 
 input_option = st.sidebar.radio("Choose source:", ["Preset Samples", "Upload Image"])
 
-sample_dir = r"C:\Users\next\.gemini\antigravity-ide\scratch\image_recognition_project\sample_images"
+sample_dir = os.path.join(BASE_DIR, "sample_images")
 selected_img_path = None
 uploaded_file = None
 
@@ -86,7 +78,7 @@ else:
 
 # Header UI
 st.markdown('<div class="main-title">📷 Image Recognition & Visual Attention Captioning</div>', unsafe_allow_html=True)
-st.markdown('<div class="sub-title">End-to-End Deep Learning Pipeline using InceptionResNetV2 + GRU Decoder with Bahdanau Attention</div>', unsafe_allow_html=True)
+st.markdown('<div class="sub-title">End-to-End Deep Learning Pipeline using InceptionResNetV2 + GRU Decoder with Visual Attention</div>', unsafe_allow_html=True)
 
 # Load Selected Image
 image = None
@@ -149,17 +141,32 @@ with tab2:
 with tab3:
     st.subheader("Original Notebook Code & Architecture")
     
-    code_tab1, code_tab2 = st.subplots = st.tabs(["Python Script (image_captioning.py)", "Jupyter Notebook (image_captioning.ipynb)"])
+    sub_tab1, sub_tab2 = st.tabs(["Python Script (image_captioning.py)", "Jupyter Notebook (image_captioning.ipynb)"])
     
-    with code_tab1:
-        py_file_path = r"C:\Users\next\.gemini\antigravity-ide\scratch\image_recognition_project\image_captioning.py"
+    with sub_tab1:
+        py_file_path = os.path.join(BASE_DIR, "image_captioning.py")
         if os.path.exists(py_file_path):
             with open(py_file_path, "r", encoding="utf-8") as f:
-                st.code(f.read(), language="python")
-                
-    with code_tab2:
-        nb_file_path = r"C:\Users\next\.gemini\antigravity-ide\scratch\image_recognition_project\image_captioning.ipynb"
+                code_text = f.read()
+                st.code(code_text, language="python")
+        else:
+            st.warning("image_captioning.py file not found.")
+
+    with sub_tab2:
+        nb_file_path = os.path.join(BASE_DIR, "image_captioning.ipynb")
         if os.path.exists(nb_file_path):
             with open(nb_file_path, "r", encoding="utf-8") as f:
-                nb_json = json.load(f)
-                st.json(nb_json, expanded=False)
+                nb_data = json.load(f)
+                
+            st.caption(f"Notebook loaded: {len(nb_data.get('cells', []))} cells")
+            
+            # Display notebook cells nicely formatted
+            for idx, cell in enumerate(nb_data.get("cells", [])):
+                cell_type = cell.get("cell_type")
+                source = "".join(cell.get("source", []))
+                if cell_type == "markdown":
+                    st.markdown(source)
+                elif cell_type == "code":
+                    st.code(source, language="python")
+        else:
+            st.warning("image_captioning.ipynb file not found.")
